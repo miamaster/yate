@@ -829,6 +829,46 @@ AC_SUBST(HAVE_SQLITE)
 AC_SUBST(SQLITE_INC)
 AC_SUBST(SQLITE_LIB)
 
+HAVE_RDKAFKA=no
+RDKAFKA_INC=""
+RDKAFKA_LIB=""
+AC_ARG_WITH(kafka,AC_HELP_STRING([--with-kafka=DIR],[use librdkafka from DIR]),[ac_cv_use_kafka=$withval],[ac_cv_use_kafka=yes])
+if [[ "x$ac_cv_use_kafka" != "xno" ]]; then
+if [[ "x$ac_cv_use_kafka" = "xyes" ]]; then
+AC_MSG_CHECKING([for librdkafka using pkg-config])
+RDKAFKA_INC=`(pkg-config --cflags rdkafka) 2>/dev/null`
+RDKAFKA_LIB=`(pkg-config --libs rdkafka) 2>/dev/null`
+if [[ "x$RDKAFKA_INC$RDKAFKA_LIB" = "x" ]]; then
+RDKAFKA_INC=""
+RDKAFKA_LIB=""
+else
+HAVE_RDKAFKA=yes
+fi
+else
+AC_MSG_CHECKING([for librdkafka in $ac_cv_use_kafka])
+local_lib="$ARCHLIB"
+if [[ "x$local_lib" != "xlib" -a ! -d "$ac_cv_use_kafka/$local_lib" ]]; then
+    local_lib="lib"
+fi
+if [[ -f "$ac_cv_use_kafka/include/librdkafka/rdkafka.h" ]]; then
+    RDKAFKA_INC="-I$ac_cv_use_kafka/include"
+elif [[ -f "$ac_cv_use_kafka/include/rdkafka/rdkafka.h" ]]; then
+    RDKAFKA_INC="-I$ac_cv_use_kafka/include"
+fi
+if [[ "x$RDKAFKA_INC" != "x" -a -d "$ac_cv_use_kafka/$local_lib" ]]; then
+    RDKAFKA_LIB="-L$ac_cv_use_kafka/$local_lib -lrdkafka"
+    HAVE_RDKAFKA=yes
+fi
+fi
+AC_MSG_RESULT([$HAVE_RDKAFKA])
+fi
+if [[ "x$HAVE_RDKAFKA" = "xyes" ]]; then
+    RDKAFKA_INC="$RDKAFKA_INC -DHAVE_RDKAFKA"
+fi
+AC_SUBST(HAVE_RDKAFKA)
+AC_SUBST(RDKAFKA_INC)
+AC_SUBST(RDKAFKA_LIB)
+
 
 HAVE_ZAP=no
 ZAP_FLAGS=""

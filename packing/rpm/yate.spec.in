@@ -487,6 +487,20 @@ that support database access will be able to use SQLite.
 %{_libdir}/yate/server/sqlitedb.yate
 %config(noreplace) %{_sysconfdir}/yate/sqlitedb.conf
 
+%package kafka
+Summary:	Kafka integration module for Yate
+Group:		Applications/Communication
+Requires:	%{name} = %{version}-%{release}
+Provides:	%{name}-kafka
+
+%description kafka
+This package provides Kafka integration for Yate, allowing modules and
+scripts to publish messages to Kafka topics.
+
+%files kafka
+%{_libdir}/yate/server/kafkadb.yate
+%config(noreplace) %{_sysconfdir}/yate/kafkadb.conf
+
 
 %if "%{no_gui}" != "1"
 
