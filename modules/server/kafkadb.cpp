@@ -112,6 +112,17 @@ public:
     virtual bool received(Message& msg);
 };
 
+#ifndef HAVE_RDKAFKA
+class KafkaNoopHandler : public MessageHandler
+{
+public:
+    KafkaNoopHandler(unsigned int prio = 100)
+	: MessageHandler("kafka.send",prio,module.name())
+	{ }
+    virtual bool received(Message& msg);
+};
+#endif
+
 #ifdef HAVE_RDKAFKA
 static void kafkaDeliveryReport(rd_kafka_t* rk, const rd_kafka_message_t* msg, void* opaque)
 {
@@ -345,6 +356,15 @@ bool KafkaHandler::received(Message& msg)
     return ok;
 }
 
+#ifndef HAVE_RDKAFKA
+bool KafkaNoopHandler::received(Message& msg)
+{
+    msg.setParam("error","librdkafka_not_available");
+    msg.setParam("kafka.account","none");
+    return false;
+}
+#endif
+
 KafkaModule::KafkaModule()
     : Module("kafkadb","kafka",true),
       m_init(false)
@@ -387,12 +407,14 @@ void KafkaModule::initialize()
     Module::initialize();
     if (m_init)
 	return;
+    Configuration cfg(Engine::configFile("kafkadb"));
 #ifndef HAVE_RDKAFKA
     Alarm(this,DebugWarn,"Kafka support disabled: build with librdkafka");
+    Engine::install(new KafkaNoopHandler(cfg.getIntValue("general","priority",100)));
+    m_init = true;
     return;
 #else
     Output("Initializing module Kafka");
-    Configuration cfg(Engine::configFile("kafkadb"));
     unsigned int i;
     for (i = 0; i < cfg.sections(); i++) {
 	NamedList* sec = cfg.getSection(i);
@@ -410,8 +432,8 @@ void KafkaModule::initialize()
 	    s_failedConns++;
 	s_conmutex.unlock();
     }
-    if (m_init)
-	Engine::install(new KafkaHandler(cfg.getIntValue("general","priority",100)));
+    Engine::install(new KafkaHandler(cfg.getIntValue("general","priority",100)));
+    m_init = true;
 #endif
 }
 
